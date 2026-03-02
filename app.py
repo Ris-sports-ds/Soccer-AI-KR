@@ -1,84 +1,72 @@
 import streamlit as st
-import google.generativeai as genai
-import os
+from google import genai
 
-# ページのデザイン設定
 st.set_page_config(page_title="Soccer Strategy AI", page_icon="⚽", layout="wide")
 
-# 本番環境（Secrets）からAPIキーを読み込む設定
-# キーの名前は後ほど設定する「GEMINI_API_KEY」に合わせます
+# 🔑 Streamlitの裏側（Secrets）からAPIキーを安全に取得
 if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
 else:
-    # 予備として直接入力欄も残しておきます
-    api_key = st.sidebar.text_input("Gemini APIキーを入力", type="password")
+    st.error("⚠️ システム設定エラー：APIキーが設定されていません。")
+    st.stop()
 
-st.markdown("""
-    <style>
-    .main {background-color: #f9f9f9;}
-    .stButton>button {
-        width: 100%; 
-        background: linear-gradient(to right, #FF4B2B, #FF416C); 
-        color: white; 
-        font-size: 20px; 
-        border-radius: 10px;
-        height: 3em;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+st.title("⚽ チーム戦略・KR診断システム")
+st.markdown("チームの『主観（想い）』と映像データの『客観（事実）』を掛け合わせ、真の課題を抽出します。")
 
-# --- メイン画面 ---
-st.title("⚽ チーム戦略診断：ワクワクをデータに。")
-st.subheader("熊谷西サッカークラブ様・市民の皆様へ")
+tab1, tab2 = st.tabs(["📋 ① 事前ヒアリング (仮説立案)", "📊 ② 動画分析フィードバック (確定診断)"])
 
-with st.form("soccer_form"):
-    st.markdown("### 1. チームの『北極星』とワクワクの源泉")
-    col1, col2 = st.columns(2)
-    with col1:
-        target = st.text_input("🏆 今シーズンの野望（目標）", placeholder="例：3部全勝優勝！")
-    with col2:
-        category = st.selectbox("カテゴリー", ["社会人リーグ", "大学・高校(強豪)", "高校(一般)", "ジュニアユース"])
+# === タブ1：事前ヒアリング ===
+with tab1:
+    st.subheader("チームの現状認識と目指すスタイル")
+    with st.form("pre_hearing_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            style = st.selectbox("🛡️ スタイル", ["ポゼッション", "ハイプレス", "堅守速攻", "サイドアタック"])
+            strengths = st.text_area("⚔️ 認識している『強み』", placeholder="例：中盤のパスワーク")
+        with col2:
+            issues = st.text_area("🤔 認識している『課題』", placeholder="例：終了間際の失点")
+            excitement = st.text_area("✨ 『ワクワクする瞬間』", placeholder="例：パスを連動して相手を翻弄した時")
+            
+        submitted_pre = st.form_submit_button("🚀 分析すべき指標（仮説KR）を提案する")
 
-    excitement = st.text_area("✨ プレーしていて『最高にワクワクする瞬間』は？", 
-        placeholder="例：サイドを連動して崩し切ったとき！")
-
-    st.markdown("---")
-    st.markdown("### 2. 俺たちの『武器』と『こだわり』")
-    col3, col4 = st.columns(2)
-    with col3:
-        strengths = st.multiselect("⚔️ チームの誇れる武器（複数選択）", 
-            ["サイドのスピード", "圧倒的な運動量", "セットプレーの破壊力", "個のドリブル突破", "粘り強い守備", "中盤のパスワーク"])
-    with col4:
-        style = st.selectbox("🛡️ 理想のプレースタイル", 
-            ["ポゼッション（保持）", "ハイプレス（奪取）", "堅守速攻（カウンター）", "サイド攻撃特化"])
-
-    st.markdown("---")
-    st.markdown("### 3. 乗り越えたい『壁』と『モヤモヤ』")
-    issues = st.text_area("🤔 今、解決したい課題やモヤモヤする場面は？", 
-        placeholder="例：後半20分以降に足が止まって失点する。")
-
-    submitted = st.form_submit_button("🚀 AI戦略アナリストに相談する")
-
-if submitted:
-    if not api_key:
-        st.error("⚠️ APIキーが設定されていません。")
-    else:
+    if submitted_pre:
+        prompt_pre = f'''あなたはプロのスポーツアナリストです。以下の主観をもとに、今後の動画分析で「どの指標」に注目すべきか、3つの仮説KRを提案してください。
+        スタイル:{style}, 強み:{strengths}, 課題:{issues}, ワクワク:{excitement}'''
         try:
-            genai.configure(api_key=api_key)
-            # 安定性の高い最新モデルを使用
-            model = genai.GenerativeModel('gemini-1.5-flash')
-
-            prompt = f'''
-            あなたは情熱的なサッカーデータアナリストです。
-            以下の情報を元に、ワクワクを最大化し、壁を突破するための3つの重要指標(KR)を提案してください。
-            【チーム情報】目標:{target}, ワクワク:{excitement}, 武器:{strengths}, スタイル:{style}, 課題:{issues}
-            '''
-
-            with st.spinner("AIが戦略を練っています... ⚽"):
-                response = model.generate_content(prompt)
-                st.balloons()
-                st.success("戦略レポートが完成しました！")
+            client = genai.Client(api_key=api_key)
+            with st.spinner("事前の仮説KRを構築中..."):
+                response = client.models.generate_content(
+                    model='gemini-1.5-flash',
+                    contents=prompt_pre
+                )
+                st.success("事前診断が完了しました！")
                 st.markdown(response.text)
-
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
+
+# === タブ2：動画分析フィードバック ===
+with tab2:
+    st.subheader("分析結果とのギャップ検証")
+    with st.form("post_analysis_form"):
+        actual_data = st.text_area("📹 動画分析で判明した『実際のデータ』", placeholder="例：自陣パス成功率は高いが、敵陣への縦パスが少ない等", height=150)
+        submitted_post = st.form_submit_button("🔥 ギャップを分析し、真のKRを確定する")
+
+    if submitted_post:
+        if not actual_data:
+            st.warning("⚠️ 実際のデータを入力してください。")
+        else:
+            prompt_post = f'''あなたはプロのアナリストです。事前の自己認識と実際のデータを比較し、ギャップを指摘した上で、明日からの練習で追うべき『真のKR』を3つ提案して。
+            【自己認識】スタイル:{style}, 強み:{strengths}, 課題:{issues}
+            【実際のデータ】{actual_data}'''
+            try:
+                client = genai.Client(api_key=api_key)
+                with st.spinner("ギャップ分析と最終KRを生成中..."):
+                    response = client.models.generate_content(
+                        model='gemini-1.5-flash',
+                        contents=prompt_post
+                    )
+                    st.balloons()
+                    st.success("最終レポートが完成しました！")
+                    st.markdown(response.text)
+            except Exception as e:
+                st.error(f"エラーが発生しました: {e}")
