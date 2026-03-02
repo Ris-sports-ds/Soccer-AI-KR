@@ -23,8 +23,8 @@ with tab1:
             style = st.selectbox("🛡️ スタイル", ["ポゼッション", "ハイプレス", "堅守速攻", "サイドアタック"])
             strengths = st.text_area("⚔️ 認識している『強み』", placeholder="例：中盤のパスワーク")
         with col2:
-            issues = st.text_area("🤔 認識している『課題』", placeholder="例：終了間際の失点")
-            excitement = st.text_area("✨ 『ワクワクする瞬間』", placeholder="例：パスを連動して相手を翻弄した時")
+            issues = st.text_area("🤔 認識している『課題』", placeholder="例：立ち上がりの失点")
+            excitement = st.text_area("✨ 『ワクワクする瞬間』", placeholder="例：パスを連動させて崩した時")
             
         submitted_pre = st.form_submit_button("🚀 分析すべき指標（仮説KR）を提案する")
 
@@ -33,24 +33,15 @@ with tab1:
         スタイル:{style}, 強み:{strengths}, 課題:{issues}, ワクワク:{excitement}'''
         try:
             client = genai.Client(api_key=api_key)
-            # 最新の「2.0」モデルを指定
             with st.spinner("事前の仮説KRを構築中..."):
                 response = client.models.generate_content(
-                    model='gemini-2.0-flash',
+                    model='gemini-2.5-flash',  # 👈 ここを許可された最新モデルに変更しました！
                     contents=prompt_pre
                 )
                 st.success("事前診断が完了しました！")
                 st.markdown(response.text)
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
-            # 【探偵モード】何が使えるかGoogleに直接聞く
-            try:
-                client = genai.Client(api_key=api_key)
-                available_models = [m.name for m in client.models.list() if 'gemini' in m.name]
-                st.warning(f"💡 【調査結果】あなたのAPIキーで使えるモデルのリストはこちらです:\n{available_models}")
-                st.info("※もしリストが空の場合は、APIキーを作成したプロジェクト自体に制限がかかっています。")
-            except Exception:
-                pass
 
 # === タブ2：動画分析フィードバック ===
 with tab2:
@@ -70,7 +61,7 @@ with tab2:
                 client = genai.Client(api_key=api_key)
                 with st.spinner("ギャップ分析と最終KRを生成中..."):
                     response = client.models.generate_content(
-                        model='gemini-2.0-flash',
+                        model='gemini-2.5-flash',  # 👈 ここも変更しました！
                         contents=prompt_post
                     )
                     st.balloons()
@@ -78,10 +69,3 @@ with tab2:
                     st.markdown(response.text)
             except Exception as e:
                 st.error(f"エラーが発生しました: {e}")
-                # 【探偵モード】
-                try:
-                    client = genai.Client(api_key=api_key)
-                    available_models = [m.name for m in client.models.list() if 'gemini' in m.name]
-                    st.warning(f"💡 使えるモデルリスト:\n{available_models}")
-                except Exception:
-                    pass
