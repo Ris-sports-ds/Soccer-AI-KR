@@ -4,6 +4,9 @@ from google import genai
 # ページ全体の設定
 st.set_page_config(page_title="Soccer Strategy AI | 立正大学", page_icon="⚽", layout="wide")
 
+# 🔑 【設定】合言葉を「万吉1700」に設定しました
+AUTH_PASSWORD = "magechi1700" 
+
 # 🎓 ブランディング
 st.markdown("<div style='text-align: right; color: #666; font-size: 0.9em;'>🎓 開発：立正大学スポーツデータサイエンス研究室</div>", unsafe_allow_html=True)
 
@@ -11,15 +14,40 @@ with st.sidebar:
     st.markdown("### 🎓 立正大学\n**スポーツデータサイエンス研究室**")
     st.caption("AIとデータを使って、市民スポーツをさらに楽しく、熱くするプロジェクトです。")
     st.divider()
+    
+    # 🔐 セキュリティ：合言葉入力
+    st.markdown("### 🔐 セキュリティ")
+    user_password = st.text_input("合言葉を入力してください", type="password")
+    
+    st.divider()
     st.markdown("📱 **仲間へのシェア方法**\n各診断結果の下にある「ダウンロード」ボタンからテキストを保存して、LINEに貼り付けると簡単に共有できます。")
 
+# APIキーの取得
 if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
 else:
     st.error("⚠️ システム設定エラー：APIキーが設定されていません。")
     st.stop()
 
+# ---------------------------------------------------------
+# 🛡️ 合言葉チェック
+# ---------------------------------------------------------
+if user_password != AUTH_PASSWORD:
+    if user_password == "":
+        st.info("👈 左側のサイドバーに「合言葉」を入力して、システムを開始してください。")
+    else:
+        st.error("❌ 合言葉が違います。正しい言葉を入力してください。")
+    st.stop()
+
+# ---------------------------------------------------------
+# ✅ メインコンテンツ（合言葉が正しい時のみ表示）
+# ---------------------------------------------------------
+
 st.title("⚽ チーム戦略・KR診断システム")
+
+# ⚠️ 個人情報に関する注意喚起
+st.warning("⚠️ **【入力に関するご注意】**\n分析の精度を高めるため、チーム名や戦術は詳しく入力いただけますが、**個人名、住所、電話番号などの機密性の高い個人情報は絶対に入力しないでください。**")
+
 st.markdown("チームの『想い（ワクワク）』と、映像からわかる『事実（データ）』を掛け合わせて、明日からの目標を一緒に見つけましょう。")
 
 tab1, tab2 = st.tabs(["📋 ① 事前ヒアリング (目標づくり)", "📊 ② 動画分析フィードバック (作戦会議)"])
@@ -36,12 +64,11 @@ with tab1:
             issues = st.text_area("🤔 悩んでいること・『課題』", placeholder="例：立ち上がりの失点、シュートが決まらない")
             excitement = st.text_area("✨ プレーしていて『最高にワクワクする瞬間』", placeholder="例：パスが綺麗に繋がって相手を崩した時")
             
-        submitted_pre = st.form_submit_button("🚀 AIスポーツアナリストに相談して、注目するデータを見つける")
+        submitted_pre = st.form_submit_button("🚀 AIスポーツアナリストに相談する")
 
     if submitted_pre:
-        # 🤖 【変更点】プロならではの「奥深い指標」を提案するように指示を追加
         prompt_pre = f'''あなたは立正大学スポーツデータサイエンス研究室が開発した「AIスポーツアナリスト」です。
-        対象は主に社会人や大学生のチームですが、小中学生が見ることも想定し、シンプルかつ丁寧な「です・ます調」で回答してください。上から目線ではなく、チームに寄り添うトーンを心がけてください。
+        丁寧な「です・ます調」で回答してください。
         
         以下のルールを厳守して出力してください：
         1. 冒頭で必ず「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と簡潔な説明を入れる。
@@ -55,17 +82,12 @@ with tab1:
         
         try:
             client = genai.Client(api_key=api_key)
-            with st.spinner("チームにぴったりの目標（KR）を分析しています..."):
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt_pre
-                )
+            with st.spinner("分析中..."):
+                response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt_pre)
                 st.success("✨ 事前診断が完了しました！")
                 st.markdown(response.text)
-                
-                st.info("⚠️ **【AIスポーツアナリストからのアドバイスについて】**\nこの結果はAIがデータをもとに考えたヒントです。絶対の正解ではないので、チームの仲間や監督と話し合うための『叩き台』として活用してください。")
-                st.download_button(label="📝 結果をテキストで保存（LINE共有用）", data=response.text, file_name="事前診断レポート.txt", mime="text/plain")
-                st.caption("💡 PDFで綺麗に保存したい場合は、ブラウザのメニューから「印刷」→「PDFとして保存」を選んでください。")
+                st.info("⚠️ **【AIスポーツアナリストからのアドバイスについて】**\nこの結果はAIがデータをもとに考えたヒントです。絶対の正解ではないので、チームの話し合いの『叩き台』として活用してください。")
+                st.download_button(label="📝 結果を保存（LINE共有用）", data=response.text, file_name="事前診断レポート.txt", mime="text/plain")
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
 
@@ -74,37 +96,29 @@ with tab2:
     st.subheader("実際のデータを見て、作戦会議をしましょう")
     with st.form("post_analysis_form"):
         actual_data = st.text_area("📹 動画分析でわかった『実際のデータ』", placeholder="例：自陣パス成功率は90%だったが、相手ゴール前への縦パスは0回だった。", height=150)
-        submitted_post = st.form_submit_button("🔥 ギャップを分析し、明日からの練習目標を決める")
+        submitted_post = st.form_submit_button("🔥 ギャップを分析し、目標を確定する")
 
     if submitted_post:
-        # 🤖 【変更点】ここでもプロの指標と優しい解説を徹底させる
         prompt_post = f'''あなたは立正大学スポーツデータサイエンス研究室が開発した「AIスポーツアナリスト」です。
-        対象は主に社会人や大学生ですが、小中学生が見ることも想定し、シンプルかつ丁寧な「です・ます調」で、寄り添うトーンで回答してください。
+        シンプルかつ丁寧な「です・ます調」で回答してください。
         
         以下のルールを厳守して出力してください：
         1. 冒頭で「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と簡潔な説明を入れる。
-        2. チームの「自己認識」と映像からの「実際のデータ」を比較し、客観的なギャップを優しく、しかし的確に指摘する。
+        2. チームの「自己認識」と映像からの「実際のデータ」を比較し、客観的なギャップを的確に指摘する。
         3. 明日からの練習で意識すべき具体的な『真のKR』を3つ提案する。
-        4. 【重要】提案するKRには、プロ視点の奥深い指標（セカンドボール回収率、デュエル勝率、トランジション強度など）を含め、必ず初心者にわかる優しい言葉（こぼれ球の回収など）で解説を添えること。
-        5. 各KRの理由は長文を避け、シンプルでわかりやすく（2〜3文程度で）まとめる。
-        6. 最後はチームの背中を押す前向きなメッセージで締めくくる。
+        4. 【重要】提案するKRには、プロ視点の奥深い指標（セカンドボール回収率、デュエル勝率など）を含め、必ず初心者にわかる優しい言葉で解説を添えること。
+        5. 各KRの理由は長文を避け、シンプルにまとめる。
 
         【自己認識】スタイル・戦術:{style}, 強み:{strengths}, 課題:{issues}
         【実際のデータ】{actual_data}'''
         
         try:
             client = genai.Client(api_key=api_key)
-            with st.spinner("ギャップを分析して、最終レポートを作成中..."):
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt_post
-                )
+            with st.spinner("最終レポートを作成中..."):
+                response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt_post)
                 st.balloons()
                 st.success("✨ 最終レポートが完成しました！")
                 st.markdown(response.text)
-                
-                st.info("⚠️ **【AIスポーツアナリストからのアドバイスについて】**\nこの結果はAIがデータをもとに考えたヒントです。これを参考に、自分たちに一番合った練習方法をチームで話し合ってみましょう！")
-                st.download_button(label="📝 結果をテキストで保存（LINE共有用）", data=response.text, file_name="動画分析レポート.txt", mime="text/plain")
-                st.caption("💡 PDFで綺麗に保存したい場合は、ブラウザのメニューから「印刷」→「PDFとして保存」を選んでください。")
+                st.download_button(label="📝 結果を保存（LINE共有用）", data=response.text, file_name="動画分析レポート.txt", mime="text/plain")
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
