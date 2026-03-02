@@ -3,7 +3,6 @@ from google import genai
 
 st.set_page_config(page_title="Soccer Strategy AI", page_icon="⚽", layout="wide")
 
-# 🔑 Streamlitの裏側（Secrets）からAPIキーを安全に取得
 if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
 else:
@@ -34,15 +33,24 @@ with tab1:
         スタイル:{style}, 強み:{strengths}, 課題:{issues}, ワクワク:{excitement}'''
         try:
             client = genai.Client(api_key=api_key)
+            # 最新の「2.0」モデルを指定
             with st.spinner("事前の仮説KRを構築中..."):
                 response = client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='gemini-2.0-flash',
                     contents=prompt_pre
                 )
                 st.success("事前診断が完了しました！")
                 st.markdown(response.text)
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
+            # 【探偵モード】何が使えるかGoogleに直接聞く
+            try:
+                client = genai.Client(api_key=api_key)
+                available_models = [m.name for m in client.models.list() if 'gemini' in m.name]
+                st.warning(f"💡 【調査結果】あなたのAPIキーで使えるモデルのリストはこちらです:\n{available_models}")
+                st.info("※もしリストが空の場合は、APIキーを作成したプロジェクト自体に制限がかかっています。")
+            except Exception:
+                pass
 
 # === タブ2：動画分析フィードバック ===
 with tab2:
@@ -62,7 +70,7 @@ with tab2:
                 client = genai.Client(api_key=api_key)
                 with st.spinner("ギャップ分析と最終KRを生成中..."):
                     response = client.models.generate_content(
-                        model='gemini-1.5-flash',
+                        model='gemini-2.0-flash',
                         contents=prompt_post
                     )
                     st.balloons()
@@ -70,3 +78,10 @@ with tab2:
                     st.markdown(response.text)
             except Exception as e:
                 st.error(f"エラーが発生しました: {e}")
+                # 【探偵モード】
+                try:
+                    client = genai.Client(api_key=api_key)
+                    available_models = [m.name for m in client.models.list() if 'gemini' in m.name]
+                    st.warning(f"💡 使えるモデルリスト:\n{available_models}")
+                except Exception:
+                    pass
