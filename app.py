@@ -5,20 +5,20 @@ import requests
 # ページ全体の設定
 st.set_page_config(page_title="Soccer Strategy AI | 立正大学", page_icon="⚽", layout="wide")
 
-# 🔑 【設定】合言葉はキャンパス住所
-AUTH_PASSWORD = "magechi1700"
+# 🔑 【設定】
+AUTH_PASSWORD = "magechi1700" 
 
-# 📊 【Googleフォーム連携設定：最新ID反映済み】
+# 📊 【Googleフォーム連携設定：最新のURL/IDを反映】
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdxx_zBrf1bGgitplGxVAFl5boen6K2GixpBL3xrgPd9WzldQ/formResponse"
 
 ENTRY_TEAM_NAME = "entry.1241656852"
 ENTRY_STYLE = "entry.103383635"
 ENTRY_ISSUES = "entry.107545070"
-ENTRY_AI_RESULT = "entry.617877957"
-ENTRY_ACTUAL_DATA = "entry.1793778765"
+ENTRY_AI_RESULT = "entry.617877957" # タブ1/2共通のAI結果用
+ENTRY_ACTUAL_DATA = "entry.1793778765" # タブ2のデータ用
 ENTRY_CONSENT = "entry.548337174"
 
-# 🎓 立正大学スポーツデータサイエンス研究室ブランディング
+# 🎓 ブランディング
 st.markdown("<div style='text-align: right; color: #666; font-size: 0.9em;'>🎓 開発：立正大学スポーツデータサイエンス研究室</div>", unsafe_allow_html=True)
 
 with st.sidebar:
@@ -27,15 +27,6 @@ with st.sidebar:
     st.divider()
     st.markdown("### 🔐 セキュリティ")
     user_password = st.text_input("合言葉を入力してください", type="password")
-    st.divider()
-    st.markdown("📱 **仲間へのシェア方法**\n「ダウンロード」ボタンから保存してLINE等で共有してください。")
-
-# APIキー取得
-if "GEMINI_API_KEY" in st.secrets:
-    api_key = st.secrets["GEMINI_API_KEY"]
-else:
-    st.error("⚠️ システム設定エラー：APIキーが設定されていません。")
-    st.stop()
 
 if user_password != AUTH_PASSWORD:
     if user_password == "":
@@ -44,9 +35,15 @@ if user_password != AUTH_PASSWORD:
         st.error("❌ 合言葉が違います。")
     st.stop()
 
+# APIキー取得
+api_key = st.secrets.get("GEMINI_API_KEY")
+if not api_key:
+    st.error("⚠️ APIキーが設定されていません。")
+    st.stop()
+
 st.title("⚽ チーム戦略・KR診断システム")
 
-# 🛡️ 研究倫理に関する詳細な説明
+# 🛡️ 研究倫理に関する詳細な説明（必須項目）
 with st.expander("🔬 学術研究・教育活動へのデータ利用に関する説明（必ずお読みください）"):
     st.write("""
     **1. 研究の目的と活用方法** 本システムを通じて収集されたデータ（チームの課題、AIによる提案内容、分析結果等）は、立正大学スポーツデータサイエンス研究室において、スポーツパフォーマンスの最適化やコーチング指標（KPI/OKR）の有効性に関する研究に活用させていただきます。成果は学会発表、学術論文、および教育的著作物（書籍等）として公表する場合があります。
@@ -54,11 +51,7 @@ with st.expander("🔬 学術研究・教育活動へのデータ利用に関す
     **2. プライバシーの保護（匿名化の徹底）** 収集したデータからチーム名や個人名などの特定可能な情報はすべて削除し、統計的な数値や「チームA」といった符号に置き換えて処理します。公表に際して第三者に個別の情報が漏れることはありません。
 
     **3. 同意の任意性と撤回について** データの研究利用への同意は任意です。同意いただけない場合でも、本アプリのすべての機能をご利用いただけます。
-
-    **4. お問い合わせ先** 立正大学スポーツデータサイエンス研究室（責任者：データサイエンス学部 准教授）
     """)
-
-st.warning("⚠️ **【ご注意】** 個人名、住所、電話番号などの機密性の高い個人情報は絶対に入力しないでください。")
 
 tab1, tab2 = st.tabs(["📋 ① 事前ヒアリング (目標づくり)", "📊 ② 動画分析フィードバック (作戦会議)"])
 
@@ -76,78 +69,74 @@ with tab1:
             excitement = st.text_area("✨ ワクワクする瞬間", placeholder="例：パスが綺麗に繋がって相手を崩した時")
         
         st.divider()
-        st.markdown("📑 **研究利用への同意**")
-        consent_research = st.checkbox("上記「学術研究・教育活動へのデータ利用に関する説明」を理解・同意し、研究室へ映像分析を依頼します。")
-        
+        consent_research = st.checkbox("上記「学術研究へのデータ利用説明」を理解・同意し、研究室へ映像分析を依頼します。")
         submitted_pre = st.form_submit_button("🚀 AIスポーツアナリストに相談する")
 
     if submitted_pre:
         if consent_research and not team_name:
             st.error("分析を依頼する場合は「チーム名」を必ず入力してください。")
         else:
+            # 🤖 プロンプト必須5条件を完全復活
             prompt_pre = f'''あなたは立正大学スポーツデータサイエンス研究室の「AIスポーツアナリスト」です。丁寧な「です・ます調」で回答してください。
-            以下のルールを厳守してください：
-            1. 冒頭で「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と簡潔に説明する。
-            2. 動画分析で注目すべき「3つの仮説KR」を提案する。
-            3. プロ視点の「奥深い指標（例：セカンドボール回収率、デュエル勝率、即時奪回率など）」を積極的に組み込む。
-            4. 専門用語には必ず（こぼれ球を拾う確率など）初心者向けの優しい解説を添える。
-            5. 各KRの理由は、シンプルに2〜3文程度でまとめる。
-            チーム名:{team_name}, スタイル:{style}, 強み:{strengths}, 課題:{issues}'''
+            
+            以下の【必須ルール】を厳守して出力してください：
+            1. 冒頭で必ず「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と簡潔な説明を入れる。
+            2. 以下のチームの状況をもとに、今後の動画分析で注目すべき「3つの仮説KR」を提案する。
+            3. 【重要】プロ視点の「奥深い指標（例：セカンドボール回収率、デュエル勝率、即時奪回率、チャンスクリエイト数など）」を積極的に組み込む。
+            4. 【重要】専門用語には必ず（こぼれ球を拾う確率、1対1の勝負など）初心者にもわかる優しい解説を添える。
+            5. 各KRの提案理由は、長文を避け、シンプルでわかりやすく（2〜3文程度で）まとめる。
+
+            チーム名:{team_name}, スタイル:{style}, 強み:{strengths}, 課題:{issues}, ワクワク:{excitement}'''
             
             try:
                 client = genai.Client(api_key=api_key)
                 with st.spinner("分析中..."):
-                    response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt_pre)
+                    response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt_pre)
                     ai_text = response.text
-                    st.success("✨ 事前診断が完了しました！")
+                    st.success("✨ 事前診断完了！")
                     st.markdown(ai_text)
                     
                     if consent_research:
-                        payload = {ENTRY_TEAM_NAME: team_name, ENTRY_STYLE: style, ENTRY_ISSUES: issues, ENTRY_AI_RESULT: ai_text, ENTRY_CONSENT: "同意する（タブ1）"}
-                        requests.post(FORM_URL, data=payload)
-                        st.toast("✅ 研究室へデータを共有しました！", icon="📩")
-                    
-                    st.download_button(label="📝 保存", data=ai_text, file_name=f"{team_name}_事前診断.txt")
+                        payload = {ENTRY_TEAM_NAME: team_name, ENTRY_STYLE: style, ENTRY_ISSUES: issues, ENTRY_AI_RESULT: ai_text, ENTRY_CONSENT: "同意（タブ1）"}
+                        res = requests.post(FORM_URL, data=payload, timeout=10)
+                        
+                        # 【デバッグ表示】画面に送信状況を出す
+                        st.divider()
+                        st.markdown(f"### 📡 フォーム送信状況（デバッグ用）")
+                        st.metric(label="送信結果コード (200なら成功)", value=res.status_code)
+                        if res.status_code == 200:
+                            st.success("✅ スプレッドシートへの記録が完了しました！")
+                        else:
+                            st.error(f"❌ 送信エラー。Googleフォーム側で拒否されました (コード: {res.status_code})")
             except Exception as e:
-                if "429" in str(e):
-                    st.error("現在リクエストが集中しています。1分ほど待ってから再度お試しください。")
-                else:
-                    st.error(f"エラーが発生しました: {e}")
+                st.error(f"エラーが発生しました: {e}")
 
-# === タブ2：動画分析フィードバック ===
+# (タブ2も同様の構成にアップデート)
 with tab2:
     st.subheader("実際のデータを見て、作戦会議をしましょう")
     with st.form("post_analysis_form"):
         actual_team_name = st.text_input("🚩 チーム名（再入力）", key="tab2_team")
         actual_data = st.text_area("📹 動画分析でわかった『実際のデータ』", height=150)
         st.divider()
-        consent_share = st.checkbox("上記「学術研究・教育活動へのデータ利用に関する説明」を理解・同意し、診断結果を研究室と共有します。")
+        consent_share = st.checkbox("上記「学術研究へのデータ利用説明」を理解・同意し、結果を研究室と共有します。")
         submitted_post = st.form_submit_button("🔥 ギャップを分析し、目標を確定する")
 
     if submitted_post:
-        prompt_post = f'''立正大学スポーツデータサイエンス研究室の「AIスポーツアナリスト」として回答してください。
-        1. 冒頭で「KR（Key Result）とは〜」と説明する。
-        2. 理想と現実のギャップを指摘する。
-        3. 明日からの『真のKR』を3つ提案する。
-        4. 奥深い指標を含め、必ず優しい解説を添える。
+        prompt_post = f'''立正大学スポーツデータサイエンス研究室の「AIスポーツアナリスト」として、実際のデータと理想のギャップを分析し、真のKRを提案してください。
+        【条件】1.KRの定義を入れる 2.プロの奥深い指標を使う 3.優しい解説を添える 4.理由は簡潔に。
         データ: {actual_data}'''
         
         try:
             client = genai.Client(api_key=api_key)
-            with st.spinner("最終分析中..."):
-                response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt_post)
+            with st.spinner("分析中..."):
+                response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt_post)
                 final_text = response.text
                 st.balloons()
-                st.success("✨ 最終レポートが完成しました！")
                 st.markdown(final_text)
                 
                 if consent_share:
-                    payload_post = {ENTRY_TEAM_NAME: actual_team_name, ENTRY_ACTUAL_DATA: actual_data, ENTRY_AI_RESULT: final_text, ENTRY_CONSENT: "同意する（タブ2）"}
-                    requests.post(FORM_URL, data=payload_post)
-                    st.toast("✅ 研究室に共有しました！", icon="📊")
-                st.download_button(label="📝 保存", data=final_text, file_name="最終レポート.txt")
-        except Exception as e:
-            if "429" in str(e):
-                st.error("現在リクエストが集中しています。1分ほど待ってから再度お試しください。")
-            else:
+                    payload_post = {ENTRY_TEAM_NAME: actual_team_name, ENTRY_ACTUAL_DATA: actual_data, ENTRY_AI_RESULT: final_text, ENTRY_CONSENT: "同意（タブ2）"}
+                    res_post = requests.post(FORM_URL, data=payload_post, timeout=10)
+                    st.metric(label="送信結果コード (タブ2)", value=res_post.status_code)
+            except Exception as e:
                 st.error(f"エラーが発生しました: {e}")
