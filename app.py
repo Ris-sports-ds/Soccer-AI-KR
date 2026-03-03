@@ -73,8 +73,8 @@ with tab1:
             style = st.text_input("🛡️ 理想のスタイル", placeholder="例：ポゼッション、ハイプレスなど")
             strengths = st.text_area("⚔️ 自分たちの『強み』")
         with col2:
-            issues = st.text_area("🤔 悩んでいること・課題")
-            excitement = st.text_area("✨ ワクワクする瞬間")
+            issues = st.text_area("🤔 悩んでいること・課題", placeholder="例：立ち上がりの失点")
+            excitement = st.text_area("✨ ワクワクする瞬間", placeholder="例：パスが綺麗に繋がって相手を崩した時")
         
         st.divider()
         st.markdown("📑 **研究利用への同意**")
