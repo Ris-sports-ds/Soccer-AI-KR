@@ -71,7 +71,7 @@ with tab1:
         with col1:
             team_name = st.text_input("🚩 チーム名", placeholder="例：立正熊谷サッカー団")
             style = st.text_input("🛡️ 理想のスタイル", placeholder="例：ポゼッション、ハイプレスなど")
-            strengths = st.text_area("⚔️ 自分たちの『強み』, placeholder="例：1vs1に競り負けない")
+            strengths = st.text_area("⚔️ 自分たちの『強み』, placeholder="例：ドリブル突破できる選手が多い")
         with col2:
             issues = st.text_area("🤔 悩んでいること・課題", placeholder="例：立ち上がりの失点")
             excitement = st.text_area("✨ ワクワクする瞬間", placeholder="例：パスが綺麗に繋がって相手を崩した時")
