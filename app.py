@@ -5,7 +5,7 @@ import requests
 # ページ全体の設定
 st.set_page_config(page_title="Soccer Strategy AI | 立正大学", page_icon="⚽", layout="wide")
 
-# 🔑 【設定】
+# 🔑 【設定】合言葉
 AUTH_PASSWORD = "magechi1700" 
 
 # 📊 【Googleフォーム連携設定】
@@ -52,9 +52,9 @@ with st.expander("🔬 学術研究・教育活動へのデータ利用に関す
 
     **3. 同意の任意性と撤回** データの研究利用への同意は任意です。同意いただけない場合でも、本アプリのすべての機能をご利用いただけます。
     
-    **4. お問い合わせ先** 
-    責任者：[立正大学 データサイエンス学部 准教授 永田聡典]  
-    連絡先：[rissho.sports.ds@gmail.com]
+    **4. お問い合わせ先** 立正大学 データサイエンス学部 准教授  
+    責任者：[ここに先生のお名前を入力してください]  
+    連絡先：[ここに先生のメールアドレスを入力してください]
     """)
 
 st.warning("⚠️ **【ご注意】** 個人名、住所、電話番号などの機密性の高い個人情報は入力しないでください。")
@@ -108,7 +108,10 @@ with tab1:
                         else:
                             st.error(f"❌ 送信エラー (コード: {res.status_code})")
             except Exception as e:
-                st.error(f"エラーが発生しました: {e}")
+                if "429" in str(e):
+                    st.error("現在リクエストが集中しています。1分ほど待ってから再度実行してください。")
+                else:
+                    st.error(f"エラーが発生しました: {e}")
 
 # === タブ2：動画分析フィードバック ===
 with tab2:
@@ -127,7 +130,7 @@ with tab2:
         
         try:
             client = genai.Client(api_key=api_key)
-            with st.spinner("AIが最終分析をしています..."):
+            with st.spinner("AIが分析しています..."):
                 response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt_post)
                 final_text = response.text
                 st.balloons()
@@ -138,4 +141,7 @@ with tab2:
                     res_post = requests.post(FORM_URL, data=payload_post, timeout=10)
                     st.metric(label="送信結果（200なら成功）", value=res_post.status_code)
         except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
+            if "429" in str(e):
+                st.error("リクエスト制限中です。1分ほどお待ちください。")
+            else:
+                st.error(f"エラーが発生しました: {e}")
