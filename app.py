@@ -1,11 +1,13 @@
 import streamlit as st
 from google import genai
+import urllib.parse
 
 # ページ全体の設定
 st.set_page_config(page_title="Soccer Strategy AI | 立正大学", page_icon="⚽", layout="wide")
 
-# 🔑 【設定】合言葉を「万吉1700」に設定しました
+# 🔑 【設定】
 AUTH_PASSWORD = "magechi1700" 
+LAB_EMAIL = "your-lab-email@example.com" # 👈 ここに研究室の受信用メールアドレスを入力してください
 
 # 🎓 ブランディング
 st.markdown("<div style='text-align: right; color: #666; font-size: 0.9em;'>🎓 開発：立正大学スポーツデータサイエンス研究室</div>", unsafe_allow_html=True)
@@ -58,7 +60,8 @@ with tab1:
     with st.form("pre_hearing_form"):
         col1, col2 = st.columns(2)
         with col1:
-            style = st.text_input("🛡️ 理想のスタイル・こだわりの戦術", placeholder="例：ポゼッション、前線からのハイプレス、サイド攻撃、または独自のスタイル")
+            team_name = st.text_input("🚩 チーム名", placeholder="例：熊谷西サッカースポーツ少年団")
+            style = st.text_input("🛡️ 理想のスタイル・こだわりの戦術", placeholder="例：ポゼッション、前線からのハイプレス、サイド攻撃など")
             strengths = st.text_area("⚔️ 自分たちの『強み』", placeholder="例：中盤のパスワーク、最後まで走る体力")
         with col2:
             issues = st.text_area("🤔 悩んでいること・『課題』", placeholder="例：立ち上がりの失点、シュートが決まらない")
@@ -67,29 +70,42 @@ with tab1:
         submitted_pre = st.form_submit_button("🚀 AIスポーツアナリストに相談する")
 
     if submitted_pre:
-        prompt_pre = f'''あなたは立正大学スポーツデータサイエンス研究室が開発した「AIスポーツアナリスト」です。
-        丁寧な「です・ます調」で回答してください。
-        
-        以下のルールを厳守して出力してください：
-        1. 冒頭で必ず「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と簡潔な説明を入れる。
-        2. 以下のチームの状況をもとに、今後の動画分析で注目すべき「3つの仮説KR」を提案する。
-        3. 【重要】プロのアナリストならではの視点として、初心者では思いつきにくいが勝敗に直結する「奥深い指標（例：セカンドボール回収率、デュエル勝率、ボールを失った直後の即時奪回率、決定機を生み出すチャンスクリエイト数など）」も積極的にKRに組み込むこと。
-        4. 【重要】その際、専門用語には必ず（こぼれ球を拾う確率、1対1の勝負など）初心者にもわかる優しい解説を添えること。
-        5. 各KRの提案理由は、長文を避け、シンプルでわかりやすく（2〜3文程度で）まとめる。
+        if not team_name:
+            st.error("分析担当者へ報告するために「チーム名」を入力してください。")
+        else:
+            prompt_pre = f'''あなたは立正大学スポーツデータサイエンス研究室が開発した「AIスポーツアナリスト」です。
+            丁寧な「です・ます調」で回答してください。
+            
+            以下のルールを厳守して出力してください：
+            1. 冒頭で必ず「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と簡潔な説明を入れる。
+            2. 以下のチームの状況をもとに、今後の動画分析で注目すべき「3つの仮説KR」を提案する。
+            3. 【重要】プロのアナリストならではの視点として、初心者では思いつきにくいが勝敗に直結する「奥深い指標（例：セカンドボール回収率、デュエル勝率、ボールを失った直後の即時奪回率、決定機を生み出すチャンスクリエイト数など）」も積極的にKRに組み込むこと。
+            4. 【重要】その際、専門用語には必ず（こぼれ球を拾う確率、1対1の勝負など）初心者にもわかる優しい解説を添えること。
+            5. 各KRの提案理由は、長文を避け、シンプルでわかりやすく（2〜3文程度で）まとめる。
 
-        【チームの情報】
-        スタイル・戦術:{style}, 強み:{strengths}, 課題:{issues}, ワクワク:{excitement}'''
-        
-        try:
-            client = genai.Client(api_key=api_key)
-            with st.spinner("分析中..."):
-                response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt_pre)
-                st.success("✨ 事前診断が完了しました！")
-                st.markdown(response.text)
-                st.info("⚠️ **【AIスポーツアナリストからのアドバイスについて】**\nこの結果はAIがデータをもとに考えたヒントです。絶対の正解ではないので、チームの話し合いの『叩き台』として活用してください。")
-                st.download_button(label="📝 結果を保存（LINE共有用）", data=response.text, file_name="事前診断レポート.txt", mime="text/plain")
-        except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
+            【チームの情報】
+            チーム名:{team_name}, スタイル・戦術:{style}, 強み:{strengths}, 課題:{issues}, ワクワク:{excitement}'''
+            
+            try:
+                client = genai.Client(api_key=api_key)
+                with st.spinner("分析中..."):
+                    response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt_pre)
+                    st.success("✨ 事前診断が完了しました！")
+                    st.markdown(response.text)
+                    
+                    # 📱 分析担当者への報告メールリンク作成
+                    subject = urllib.parse.quote(f"【KR診断報告】{team_name}様の事前ヒアリング結果")
+                    body = urllib.parse.quote(f"チーム名: {team_name}\n目標スタイル: {style}\n現状の課題: {issues}\n\n【AI提案の仮説KR】\n{response.text}")
+                    mailto_link = f"mailto:{LAB_EMAIL}?subject={subject}&body={body}"
+                    
+                    st.divider()
+                    st.markdown("### 📢 分析担当（研究室）へ報告しましょう")
+                    st.info("以下のボタンを押して、診断結果を研究室へ送信してください。これにより、皆さんの想いに沿った正確な映像分析が可能になります。")
+                    st.link_button("📩 研究室へ分析を依頼する (メール起動)", mailto_link)
+                    
+                    st.download_button(label="📝 結果を保存（LINE共有用）", data=response.text, file_name=f"{team_name}_事前診断レポート.txt", mime="text/plain")
+            except Exception as e:
+                st.error(f"エラーが発生しました: {e}")
 
 # === タブ2：動画分析フィードバック ===
 with tab2:
@@ -109,7 +125,6 @@ with tab2:
         4. 【重要】提案するKRには、プロ視点の奥深い指標（セカンドボール回収率、デュエル勝率など）を含め、必ず初心者にわかる優しい言葉で解説を添えること。
         5. 各KRの理由は長文を避け、シンプルにまとめる。
 
-        【自己認識】スタイル・戦術:{style}, 強み:{strengths}, 課題:{issues}
         【実際のデータ】{actual_data}'''
         
         try:
