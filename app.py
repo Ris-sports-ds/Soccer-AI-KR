@@ -71,14 +71,14 @@ with tab1:
         with col1:
             team_name = st.text_input("🚩 チーム名", placeholder="例：立正熊谷サッカー団")
             style = st.text_input("🛡️ 理想のスタイル", placeholder="例：ポゼッション、ハイプレスなど")
-            strengths = st.text_area("⚔️ 自分たちの『強み』")
+            strengths = st.text_area("⚔️ 自分たちの『強み』, placeholder="例：1vs1に競り負けない")
         with col2:
             issues = st.text_area("🤔 悩んでいること・課題", placeholder="例：立ち上がりの失点")
             excitement = st.text_area("✨ ワクワクする瞬間", placeholder="例：パスが綺麗に繋がって相手を崩した時")
         
         st.divider()
         st.markdown("📑 **研究利用への同意**")
-        consent_research = st.checkbox("上記「学術研究・教育活動へのデータ利用に関する説明」を理解し、研究室へ映像分析を依頼します。")
+        consent_research = st.checkbox("上記「学術研究・教育活動へのデータ利用に関する説明」を理解・同意し、研究室へ映像分析を依頼します。")
         
         submitted_pre = st.form_submit_button("🚀 AIスポーツアナリストに相談する")
 
@@ -125,7 +125,7 @@ with tab2:
         actual_data = st.text_area("📹 動画分析でわかった『実際のデータ』", height=150)
         st.divider()
         st.markdown("📑 **研究利用への同意**")
-        consent_share = st.checkbox("上記「学術研究・教育活動へのデータ利用に関する説明」を理解し、診断結果を研究室と共有します。")
+        consent_share = st.checkbox("上記「学術研究・教育活動へのデータ利用に関する説明」を理解・同意し、診断結果を研究室と共有します。")
         submitted_post = st.form_submit_button("🔥 ギャップを分析し、目標を確定する")
 
     if submitted_post:
