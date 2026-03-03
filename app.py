@@ -6,9 +6,9 @@ import requests
 st.set_page_config(page_title="Soccer Strategy AI | 立正大学", page_icon="⚽", layout="wide")
 
 # 🔑 【設定】合言葉はキャンパス住所
-AUTH_PASSWORD = "magechi1700" 
+AUTH_PASSWORD = "magechi1700"
 
-# 📊 【Googleフォーム連携設定：完了済み】
+# 📊 【Googleフォーム連携設定】
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdxx_zBrf1bGgitplGxVAFl5boen6K2GixpBL3xrgPd9WzldQ/formResponse"
 
 ENTRY_TEAM_NAME = "entry.1241656852"
@@ -18,7 +18,7 @@ ENTRY_AI_RESULT = "entry.617877957"
 ENTRY_ACTUAL_DATA = "entry.1793778765"
 ENTRY_CONSENT = "entry.548337174"
 
-# 🎓 立正大学スポーツデータサイエンス研究室ブランディング
+# 🎓 ブランディング
 st.markdown("<div style='text-align: right; color: #666; font-size: 0.9em;'>🎓 開発：立正大学スポーツデータサイエンス研究室</div>", unsafe_allow_html=True)
 
 with st.sidebar:
@@ -46,7 +46,7 @@ if user_password != AUTH_PASSWORD:
 
 st.title("⚽ チーム戦略・KR診断システム")
 
-# 🛡️ 研究倫理に関する詳細な説明（アカデミック版）
+# 🛡️ 研究倫理に関する詳細な説明（学会・論文・出版を想定した記述）
 with st.expander("🔬 学術研究・教育活動へのデータ利用に関する説明（必ずお読みください）"):
     st.write("""
     **1. 研究の目的と活用方法** 本システムを通じて収集されたデータ（チームの課題、AIによる提案内容、分析結果等）は、立正大学スポーツデータサイエンス研究室において、スポーツパフォーマンスの最適化やコーチング指標（KPI/OKR）の有効性に関する研究に活用させていただきます。成果は学会発表、学術論文、および教育的著作物（書籍等）として公表する場合があります。
@@ -85,15 +85,17 @@ with tab1:
         if consent_research and not team_name:
             st.error("分析を依頼する場合は「チーム名」を必ず入力してください。")
         else:
-            # 🤖 プロンプト必須5条件
+            # 🤖 【必須5条件】を組み込んだプロンプト
             prompt_pre = f'''あなたは立正大学スポーツデータサイエンス研究室の「AIスポーツアナリスト」です。丁寧な「です・ます調」で回答してください。
-            以下のルールを厳守してください：
-            1. 冒頭で「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と簡潔に説明する。
-            2. 動画分析で注目すべき「3つの仮説KR」を提案する。
-            3. プロ視点の「奥深い指標（例：セカンドボール回収率、デュエル勝率、即時奪回率など）」を積極的に組み込む。
-            4. 専門用語には必ず（こぼれ球を拾う確率など）初心者にもわかる優しい解説を添える。
-            5. 各KRの理由は、シンプルに2〜3文程度でまとめる。
+            
+            以下の【必須ルール】を厳守して出力してください：
+            1. 冒頭で必ず「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と簡潔な説明を入れる。
+            2. 以下のチームの状況をもとに、今後の動画分析で注目すべき「3つの仮説KR」を提案する。
+            3. 【重要】プロ視点の「奥深い指標（例：セカンドボール回収率、デュエル勝率、即時奪回率、チャンスクリエイト数など）」を積極的に組み込む。
+            4. 【重要】専門用語には必ず（こぼれ球を拾う確率、1対1の勝負など）初心者にもわかる優しい解説を添える。
+            5. 各KRの提案理由は、長文を避け、シンプルでわかりやすく（2〜3文程度で）まとめる。
 
+            【チームの情報】
             チーム名:{team_name}, スタイル:{style}, 強み:{strengths}, 課題:{issues}, ワクワク:{excitement}'''
             
             try:
@@ -125,18 +127,20 @@ with tab2:
         submitted_post = st.form_submit_button("🔥 ギャップを分析し、目標を確定する")
 
     if submitted_post:
+        # 🤖 タブ2でも必須5条件を適用
         prompt_post = f'''立正大学スポーツデータサイエンス研究室の「AIスポーツアナリスト」として回答してください。
-        1. 冒頭で「KR（Key Result）とは〜」と説明を入れる。
-        2. 理想と現実のギャップを指摘する。
-        3. 明日からの『真のKR』を3つ提案する。
-        4. 奥深い専門指標（セカンドボール回収率など）を含め、必ず優しい解説を添える。
-        5. 理由はシンプルにまとめる。
+        以下の【必須ルール】を厳守してください：
+        1. 冒頭で「**KR（Key Result）とは、チームの目標を達成するための具体的な数値指標（目印）のことです。**」と説明する。
+        2. 自己認識と実際のデータを比較し、客観的なギャップを優しく指摘する。
+        3. 明日からの練習で意識すべき具体的な『真のKR』を3つ提案する。
+        4. 奥深い専門指標（セカンドボール回収率など）を含め、必ず初心者向けの優しい解説を添える。
+        5. 各KRの理由は長文を避け、シンプルにまとめる。
         
         【実際のデータ】{actual_data}'''
         
         try:
             client = genai.Client(api_key=api_key)
-            with st.spinner("分析中..."):
+            with st.spinner("最終レポートを作成中..."):
                 response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt_post)
                 final_text = response.text
                 st.balloons()
