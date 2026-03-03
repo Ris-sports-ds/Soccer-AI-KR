@@ -69,7 +69,7 @@ with tab1:
     with st.form("pre_hearing_form"):
         col1, col2 = st.columns(2)
         with col1:
-            team_name = st.text_input("🚩 チーム名", placeholder="例：熊谷西サッカークラブ")
+            team_name = st.text_input("🚩 チーム名", placeholder="例：立正熊谷サッカー団")
             style = st.text_input("🛡️ 理想のスタイル", placeholder="例：ポゼッション、ハイプレスなど")
             strengths = st.text_area("⚔️ 自分たちの『強み』")
         with col2:
